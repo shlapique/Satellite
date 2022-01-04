@@ -1,0 +1,11 @@
+H:\projects\mai\isrpps\cursed\satellite\satellite\bin\Debug\satellite.exe.config
+H:\projects\mai\isrpps\cursed\satellite\satellite\bin\Debug\satellite.exe
+H:\projects\mai\isrpps\cursed\satellite\satellite\bin\Debug\satellite.pdb
+H:\projects\mai\isrpps\cursed\satellite\satellite\obj\Debug\satellite.csproj.AssemblyReference.cache
+H:\projects\mai\isrpps\cursed\satellite\satellite\obj\Debug\satellite.csproj.SuggestedBindingRedirects.cache
+H:\projects\mai\isrpps\cursed\satellite\satellite\obj\Debug\satellite.Properties.Resources.resources
+H:\projects\mai\isrpps\cursed\satellite\satellite\obj\Debug\satellite.csproj.GenerateResource.cache
+H:\projects\mai\isrpps\cursed\satellite\satellite\obj\Debug\satellite.csproj.CoreCompileInputs.cache
+H:\projects\mai\isrpps\cursed\satellite\satellite\obj\Debug\satellite.exe
+H:\projects\mai\isrpps\cursed\satellite\satellite\obj\Debug\satellite.pdb
+H:\projects\mai\isrpps\cursed\satellite\satellite\obj\Debug\WindowsFormsApp1.Form1.resources
