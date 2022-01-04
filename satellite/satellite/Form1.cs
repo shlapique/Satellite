@@ -47,16 +47,16 @@ namespace WindowsFormsApp1
             x = (int)(center.X + 150 * Math.Cos(angle1));
             y = (int)(center.Y + 150 * Math.Sin(angle1));
 
-            Point loc = new Point(x, y);
+            Point loc = new Point(x - 7, y - 7);
 
-            Rectangle sat = new Rectangle(loc, new Size(10, 10));
+            Rectangle sat = new Rectangle(loc, new Size(14, 14));
 
             // Fill ellipse on screen.
             g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 150, center.Y + 150, center.X + 150, center.Y - 150)); //Рисует эллипс
             g.FillEllipse(redBrush, sat);
 
             pictureBox1.Image = bm;
-            angle1 -= 0.009; Task.Delay(1);
+            angle1 -= 0.0223; Task.Delay(1);
         }
 
 
