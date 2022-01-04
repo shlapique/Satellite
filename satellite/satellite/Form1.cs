@@ -16,7 +16,7 @@ namespace WindowsFormsApp1
         private Point loc_earth; // location of Earth
         private Point center; // center 
 
-        double angle1 = 0;
+        double angle, angle1 = 0;
 
 
         // Create solid brush.
@@ -43,20 +43,28 @@ namespace WindowsFormsApp1
             g.Clear(pictureBox1.BackColor);
 
             int x, y;
-            //////////////////////////////////
-            x = (int)(center.X + 150 * Math.Cos(angle1));
-            y = (int)(center.Y + 150 * Math.Sin(angle1));
 
+            x = (int)(center.X + 150 * Math.Cos(angle));
+            y = (int)(center.Y + 150 * Math.Sin(angle));
             Point loc = new Point(x - 7, y - 7);
-
             Rectangle sat = new Rectangle(loc, new Size(14, 14));
-
             // Fill ellipse on screen.
             g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 150, center.Y + 150, center.X + 150, center.Y - 150)); //Рисует эллипс
             g.FillEllipse(redBrush, sat);
+            /////////////////////////////////
+            int x1, y1;
+
+            x1 = (int)(center.X + 60 * Math.Cos(angle));
+            y1 = (int)(center.Y + 150 * Math.Sin(angle));
+            Point loc1 = new Point(x1 - 7, y1 - 7);
+            Rectangle sat1 = new Rectangle(loc1, new Size(14, 14));
+            // Fill ellipse on screen.
+            g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 60, center.Y + 150, center.X + 60, center.Y - 150)); //Рисует эллипс
+            g.FillEllipse(redBrush, sat1);
+
 
             pictureBox1.Image = bm;
-            angle1 -= 0.0223; Task.Delay(1);
+            angle -= 0.0223; Task.Delay(1);
         }
 
 
