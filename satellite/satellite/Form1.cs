@@ -14,32 +14,34 @@ namespace WindowsFormsApp1
     {
         private Point loc1; //loc picture box1
         private Point loc_earth; // location of Earth
-
         private Point center; // center 
-
-        private Graphics g;
-        private Pen pen;
 
         double angle1 = 0;
 
 
         // Create solid brush.
         SolidBrush redBrush = new SolidBrush(Color.Red);
-
+        Pen pen = new Pen(Color.Black);
+        Bitmap bm;
+        Graphics g;
 
         public Form1()
         {
             InitializeComponent();
+            bm = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+            g = Graphics.FromImage(bm);
+
+            this.Size = new Size(800, 450);
             loc1 = new Point((ClientSize.Width / 2) - (pictureBox1.Width / 2), (ClientSize.Height / 2) - (pictureBox1.Height / 2));
             loc_earth = new Point(loc1.X + (pictureBox1.Width / 2) - (pictureBox2.Width / 2), loc1.Y + (pictureBox1.Height / 2) - (pictureBox2.Height / 2));
             center = new Point(pictureBox1.Width / 2, pictureBox1.Height / 2);
             pictureBox1.Location = loc1;
             pictureBox2.Location = loc_earth;
-
-
         }
         private void timer1_Tick(object sender, EventArgs e)
         {
+            g.Clear(pictureBox1.BackColor);
+
             int x, y;
             //////////////////////////////////
             x = (int)(center.X + 150 * Math.Cos(angle1));
@@ -47,20 +49,14 @@ namespace WindowsFormsApp1
 
             Point loc = new Point(x, y);
 
-            Rectangle rect = new Rectangle(loc, new Size(10, 10));
-
-            Bitmap bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
-            Graphics g = Graphics.FromImage(bmp);
+            Rectangle sat = new Rectangle(loc, new Size(10, 10));
 
             // Fill ellipse on screen.
-            g.FillEllipse(redBrush, rect);
+            g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 150, center.Y + 150, center.X + 150, center.Y - 150)); //Рисует эллипс
+            g.FillEllipse(redBrush, sat);
 
-            pictureBox1.Image = bmp;
-
-
-            //Rectangle sat = new Rectangle();
-
-            angle1 -= 0.00826; Task.Delay(1);
+            pictureBox1.Image = bm;
+            angle1 -= 0.009; Task.Delay(1);
         }
 
 
@@ -76,7 +72,7 @@ namespace WindowsFormsApp1
         private class Orbit : Earth
         {
             public Orbit() { }
-            private int r = 100;
+            private int r = 150;
 
             public int a { get { return r; } set { r = value; } }
 
@@ -95,13 +91,13 @@ namespace WindowsFormsApp1
 
             Orbit orbit = new Orbit();
             int r = orbit.a;
-            //g = this.CreateGraphics();
+            g = this.CreateGraphics();
             pen = new Pen(Color.Black); // Нашему карандашу присваиваем зеленый цвет
 
             if (true)
             {
                 Bitmap bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
-                Graphics g = Graphics.FromImage(bmp);
+                g = Graphics.FromImage(bmp);
                 {
                     //g.Clear(Color.White);
                     g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - r, center.Y + r, center.X + r, center.Y - r)); //Рисует эллипс
