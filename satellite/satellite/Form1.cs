@@ -98,14 +98,13 @@ namespace WindowsFormsApp1
             double radius_elli_y = center.Y - a;
 
             // повернем x, y
-            rotation(ref coord_x, ref coord_y, 0.5);
+            rotation(ref coord_x, ref coord_y, Math.PI / 6);
             //// повернем арку
             //rotation(ref radius_elli_x, ref radius_elli_y, 0.5);
 
             ///+++++++++++++++++++
             center_tmp = center;
-            rotation(ref center_tmp, 0.5);
-
+            rotation(ref center_tmp, Math.PI / 6);
 
             x = (int)(center.X + coord_x);
             y = (int)(center.Y + coord_y);
