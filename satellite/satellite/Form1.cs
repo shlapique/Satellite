@@ -13,30 +13,31 @@ namespace WindowsFormsApp1
     public partial class Form1 : Form
     {
         private Point loc1; //loc picture box1
-        private Point loc_earth; // location of Earth
         private Point center; // center 
+        private Point center_tmp; // center 
+
 
         private Point center_new; // center_new
 
-        private Point center_new2;
-
         double angle, angle1, angle2 = 0;
-
 
         // Create solid brush.
         SolidBrush redBrush = new SolidBrush(Color.Red);
         Pen pen = new Pen(Color.Black);
         Bitmap bm;
 
-        Bitmap bm2;
+        //Bitmap bm2;
 
         Graphics g;
 
-        Graphics g2;
+        //Graphics g2;
 
         Image im;
 
         Point tmpPonit = new Point();
+
+        // радиусы эллипсов
+        int a = 0; int b = 0;
 
         public Form1()
         {
@@ -47,53 +48,97 @@ namespace WindowsFormsApp1
             im = Image.FromFile("H:\\projects\\mai\\isrpps\\cursed\\img\\earth.jpg");
 
 
-            bm2 = new Bitmap(pictureBox2.Width, pictureBox2.Height);
-            g2 = Graphics.FromImage(bm2);
+            //bm2 = new Bitmap(pictureBox2.Width, pictureBox2.Height);
+            //g2 = Graphics.FromImage(bm2);
 
             this.Size = new Size(800, 450);
             loc1 = new Point((ClientSize.Width / 2) - (pictureBox1.Width / 2), (ClientSize.Height / 2) - (pictureBox1.Height / 2));
-            loc_earth = new Point(loc1.X + (pictureBox1.Width / 2) - (pictureBox2.Width / 2), loc1.Y + (pictureBox1.Height / 2) - (pictureBox2.Height / 2));
             center = new Point(pictureBox1.Width / 2, pictureBox1.Height / 2);
-
             center_new = new Point(pictureBox1.Width / 2 - 50, pictureBox1.Height / 2 - 50);
 
-            //center_new2 = new Point()
-
             pictureBox1.Location = loc1;
-            //pictureBox2.Location = loc_earth;
         }
+        // //////////////////
+        // ф-я поворота эллипса 
+        public void rotation(ref int x, ref int y, double angle_rot)
+        {
+            int x_t = x;
+            x = (int)(x * Math.Cos(angle_rot) - y * Math.Sin(angle_rot));
+            y = (int)(x_t * Math.Sin(angle_rot) + y * Math.Cos(angle_rot));
+        }
+
+        public void rotation(ref double x, ref double y, double angle_rot)
+        {
+            double x_t = x;
+            x = x * Math.Cos(angle_rot) - y * Math.Sin(angle_rot);
+            y = x_t * Math.Sin(angle_rot) + y * Math.Cos(angle_rot);
+        }
+
+        public void rotation(ref Point point, double angle_rot)
+        {
+            int point_x = point.X;
+            point.X = (int)(point.X * Math.Cos(angle_rot) - point.Y * Math.Sin(angle_rot));
+            point.Y = (int)(point_x * Math.Sin(angle_rot) + point.Y * Math.Cos(angle_rot));
+        }
+
+
+        // /////////////////////
         private void timer1_Tick(object sender, EventArgs e)
         {
             g.Clear(pictureBox1.BackColor);
 
+            a = 160; b = 20;
+
             int x, y;
 
-            x = (int)(center.X + 20 * Math.Cos(angle));
-            y = (int)(center.Y + 160 * Math.Sin(angle));
+            double coord_x = b * Math.Cos(angle);
+            double coord_y = a * Math.Sin(angle);
+
+            double radius_elli_x = center.X - b;
+            double radius_elli_y = center.Y - a;
+
+            // повернем x, y
+            rotation(ref coord_x, ref coord_y, 0.5);
+            //// повернем арку
+            //rotation(ref radius_elli_x, ref radius_elli_y, 0.5);
+
+            ///+++++++++++++++++++
+            center_tmp = center;
+            rotation(ref center_tmp, 0.5);
+
+
+            x = (int)(center.X + coord_x);
+            y = (int)(center.Y + coord_y);
+
 
             Point loc = new Point(x - 7, y - 7);
 
-            double angleStart = Math.Acos(20.0 / 50.0);
+            double angleStart = Math.Acos((double)b / 50.0);
             angleStart = angleStart * 180.0 / Math.PI;
 
-            double b = Math.Abs(loc.X - center.X); // b
+            // считаем радиус-вектор до центра 
+            double del_x, del_y;
 
-            double tmp_angle = Math.Acos(b / 50.0);
-            tmp_angle = tmp_angle * 180.0 / Math.PI;
+            del_x = loc.X - center.X;
+            del_y = loc.Y - center.Y;
+            double r = Math.Sqrt(Math.Pow(del_x, 2) + Math.Pow(del_y, 2)); // нашли гипотенузу
 
-            if (tmpPonit.Y >= loc.Y & (tmp_angle <= angleStart || tmp_angle >= 360 - angleStart * 2.0))
+            if (tmpPonit.Y >= loc.Y & r <= 50.0)
             {
-
-                Rectangle sat = new Rectangle(loc, new Size(14, 14));
+                Rectangle sat = new Rectangle(loc, new Size(14, 14)); // 
                 // Fill ellipse on screen.
                 //g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 20, center.Y + 160, center.X + 20, center.Y - 160)); //Рисует эллипс
-
 
                 g.FillEllipse(redBrush, sat);
 
                 g.DrawImage(im, center_new);
 
-                g.DrawArc(pen, (float)center.X - 20, (float)center.Y - 160, 40, 320, (float)angleStart, 360 - (float)angleStart * 2);
+                g.TranslateTransform(center.X, center.Y); //это центр вращения
+                label2.Text = "center_tmp: " + center.X / 2 + ", " + -center.Y / 2;
+                g.RotateTransform(30.0F); //Поворачиваем
+                g.TranslateTransform(-center.X, -center.Y);
+                g.DrawArc(pen, (float)center.X - b, (float)center.Y - a, b * 2, a * 2, (float)angleStart, 360 - (float)angleStart * 2);
+                g.ResetTransform(); //Возвращаем точку отчета на 0, чтоб дальше рисовать как обычно
             }
             else
             {      
@@ -103,53 +148,45 @@ namespace WindowsFormsApp1
                 Rectangle sat = new Rectangle(loc, new Size(14, 14));
                 // Fill ellipse on screen.
                 //g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 20, center.Y + 160, center.X + 20, center.Y - 160)); //Рисует эллипс
-
-
+                //---------
                 //g.DrawArc(pen, (float)center.X - 20, (float)center.Y - 160, 40, 320, 90, 220);
-                g.DrawArc(pen, (float)center.X - 20, (float)center.Y - 160, 40, 320, (float)angleStart, 360 - (float)angleStart * 2);
+                //g.DrawArc(pen, (float)radius_elli_x, (float)radius_elli_y, b * 2, a * 2, (float)angleStart, 360 - (float)angleStart * 2);
+                g.TranslateTransform(center.X, center.Y); //это центр вращения
+                label2.Text = "center_tmp: " + center.X / 2 + ", " + -center.Y / 2;
+                g.RotateTransform(30.0F); //Поворачиваем
+                g.TranslateTransform(-center.X, -center.Y);
+                g.DrawArc(pen, (float)radius_elli_x, (float)radius_elli_y, b * 2, a * 2, (float)angleStart, 360 - (float)angleStart * 2);
+                g.ResetTransform(); //Возвращаем точку отчета на 0, чтоб дальше рисовать как обычно
 
                 g.FillEllipse(redBrush, sat);
+
+                
 
             }
             tmpPonit = loc;
 
-            /*
-
             /////////////////////////////////
             int x1, y1;
 
-            g.DrawImage(im, loc_earth);
+            //g.DrawImage(im, center_new);
 
             x1 = (int)(center.X + 120 * Math.Cos(angle));
             y1 = (int)(center.Y + 150 * Math.Sin(angle));
+
             Point loc1 = new Point(x1 - 7, y1 - 7);
             Rectangle sat1 = new Rectangle(loc1, new Size(14, 14));
             // Fill ellipse on screen.
             g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 120, center.Y + 150, center.X + 120, center.Y - 150)); //Рисует эллипс
             g.FillEllipse(redBrush, sat1);
-            /////////////////////////////////
-            int x2, y2;
-
-            x2 = (int)(center.X + 20* Math.Cos(angle));
-            y2 = (int)(center.Y + 160 * Math.Sin(angle));
-            Point loc2 = new Point(x2 - 7, y2 - 7);
-            Rectangle sat2 = new Rectangle(loc2, new Size(14, 14));
-            // Fill ellipse on screen.
-
-           
-
-            g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 20, center.Y + 160, center.X + 20, center.Y - 160)); //Рисует эллипс
-            g.FillEllipse(redBrush, sat2);
-
-           */
 
             pictureBox1.Image = bm;
 
-            label1.Text = "X: " + loc.X + " Y: " + loc.Y + "\n  angle: " + angleStart + " \n angle_tmp: " + tmp_angle + " \n center: " + center.X + "," + center.Y;
+            label1.Text = "X: " + loc.X + " Y: " + loc.Y + "\n  angle: " + angleStart + " \n r: " + r + " \n center: " + center.X + "," + center.Y;
 
             angle -= 0.0123; Task.Delay(1);
         }
-
+        // 2 вида орбит: пересекающая Землю - в двух местах сразу всегда
+        // 
 
 
         public class Earth
