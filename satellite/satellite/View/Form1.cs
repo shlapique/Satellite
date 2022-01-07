@@ -8,15 +8,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using satellite.Controller;
+
 namespace WindowsFormsApp1
 {
     public partial class Form1 : Form
     {
         private Point loc1; //loc picture box1
         private Point center; // center 
-        private Point center_tmp; // center 
-
-
+        private Point center_tmp; // center
         private Point center_new; // center_new
 
         double angle, angle1, angle2 = 0;
@@ -45,7 +45,7 @@ namespace WindowsFormsApp1
             bm = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             g = Graphics.FromImage(bm);
 
-            im = Image.FromFile("H:\\projects\\mai\\isrpps\\cursed\\img\\earth.jpg");
+            im = Image.FromFile("H:\\projects\\mai\\isrpps\\cursed\\img\\earth.png");
 
 
             //bm2 = new Bitmap(pictureBox2.Width, pictureBox2.Height);
@@ -87,7 +87,7 @@ namespace WindowsFormsApp1
         {
             g.Clear(pictureBox1.BackColor);
 
-            a = 160; b = 20;
+            a = 150; b = 40;
 
             int x, y;
 
