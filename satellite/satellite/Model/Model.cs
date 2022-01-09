@@ -15,15 +15,13 @@ namespace satellite.Model
     {
         Random rand = new Random();
 
-        public Stack<Sat> stack;// создадим список сателлитов
+        public List<Sat> list;// создадим список сателлитов
 
-        //private delegate void MyDelegate(int i); //объявление делегата
         Controller.Controller controller { set; get; } = null;
         public Model(Controller.Controller controller)
         {
             this.controller = controller;
-            MessageBox.Show("MODEL !");
-            this.stack = new Stack<Sat>();
+            this.list = new List<Sat>();
         }
 
         public static void rad_to_deg(ref double angle_rad)
@@ -57,6 +55,19 @@ namespace satellite.Model
             point.Y = (int)(point_x * Math.Sin(angle_rot) + point.Y * Math.Cos(angle_rot));
         }
 
+        public static void rotation(ref Point point, Point center, double angle_rot) // поворот относительно точки
+        {
+            int point_x = point.X;
+            point.X = (int)Math.Round((point.X - center.X) * Math.Cos(angle_rot) - (point.Y - center.Y) * Math.Sin(angle_rot) + center.X);
+            point.Y = (int)Math.Round((point_x - center.X) * Math.Sin(angle_rot) + (point.Y - center.Y) * Math.Cos(angle_rot) + center.Y);
+        }
+
+        public static double radius_vector(Point a, Point b)
+        {
+            double r = Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Y - b.Y, 2));
+            return r;
+        }
+
 
         //classes +++ 
         public abstract class Earth
@@ -68,21 +79,21 @@ namespace satellite.Model
                 get { return "H:\\projects\\mai\\isrpps\\cursed\\img\\earth.png"; } 
                 set { } 
             }
-           
-            // rotatefunc // +++
         }
 
         public class Orbit : Earth
         {
             int angle_min = 0;
-            int angle_max = 90; // 
-            int rad_min = 8;
+            int angle_max = 180; // 
+            int rad_min = 52;
             int rad_max = 150;
 
-            public int a, b; // rads
+            public int a = 150;
+            public int b;
+            public int min_b = 0;
             public double angle;
 
-            public double angle_rotation = 0;
+            public double angle_rotation;
             public double angleStart;
             public double angle_deg;
 
@@ -94,8 +105,6 @@ namespace satellite.Model
             public Orbit()
             {
                 random_orbit();
-                MessageBox.Show("ORBIT !");
-                MessageBox.Show($"{a}, {b}, {angle}");
                 this.angle_deg = angle;
                 rad_to_deg(ref angle_deg);
             }
@@ -103,17 +112,8 @@ namespace satellite.Model
             public void random_orbit()
             {
                 //задаем слачайные радиусы эллипсов и углы
+                this.b = rand.Next(rad_min, rad_max);
                 this.angle = rand.Next(angle_min, angle_max); // 
-                this.a = rand.Next(rad_min, rad_max);
-                if(a <= 50) 
-                {
-                    this.b = rand.Next(52, rad_max);
-                }
-                else
-                {
-                    this.b = rand.Next(rad_min, rad_max);
-                }
-
                 this.angle = this.angle * Math.PI / 180.0; // 0 .. pi
             }
             public void apogee_pos(Point center)
@@ -134,8 +134,8 @@ namespace satellite.Model
                 }
 
                 // поворачиваем на угол angle
-                rotation(ref apogee_1, angle);
-                rotation(ref apogee_2, angle);
+                rotation(ref apogee_1, center, angle);
+                rotation(ref apogee_2, center, angle);
             }
         }
 
@@ -149,16 +149,43 @@ namespace satellite.Model
             double coord_x, coord_y, radius_elli_x, radius_elli_y;
             public double r; // radius-vector
 
-            public bool entry_flag = false; // пересекал ли окружность 
+            public double r_vector1_1; // 
+            public double r_vector2_1; // 
+            public double r_vector1_2; // 
+            public double r_vector2_2; // 
 
+            public double r_vector;
 
+            public double r_final;
+            public double r_loc_tmp_begin;
+
+            // ____________
+            public double velo_coef = 1; // коэфф скорости 
+
+            Random rand = new Random();
+
+            public Point begin_point;
+
+            public int flag;
+            public bool one;
+            public bool two;
+            public bool r_stat;
+            public bool entry = false;
+
+            public Point loc_begin;
+
+            public double ratio_cos, ratio_sin;
+
+            public int sign; // направл вращения 
             public Sat(Point center)
             {
-                MessageBox.Show("SAT CONSTR !");
                 this.tmpPonit = new Point();
-                //start_position(center); // default location
-                MessageBox.Show($"a = {a}, b = {b}, \n radiusellix = {radius_elli_x}, radiuselliy = {radius_elli_y}, \n STARTloc.x = {loc.X}, STARTloc.Y = {loc.Y}");
                 apogee_pos(center);
+                start_position(center);
+                loc_begin = new Point();
+                loc_begin = loc;
+                sign = rand.Next(0, 100);
+                velo_coef = 1;
             }
 
             public void start_position(Point center)
@@ -173,7 +200,7 @@ namespace satellite.Model
                 this.x = (int)(center.X + coord_x);
                 this.y = (int)(center.Y + coord_y);
 
-                this.loc = new Point(x - 7, y - 7); // default location
+                this.loc = new Point(x - 4, y - 4); // default location
             }
 
             public void position(Point center) // position every tick
@@ -188,11 +215,11 @@ namespace satellite.Model
                 this.x = (int)(center.X + coord_x);
                 this.y = (int)(center.Y + coord_y);
 
-                this.loc = new Point(x - 7, y - 7);
+                this.loc = new Point(x - 4, y - 4);
 
                 angleStart = Math.Acos(b / 50.0);
 
-                angleStart = angleStart * 180.0 / Math.PI;
+                angleStart = angleStart * 180.0 / Math.PI; //deg
 
                 // считаем радиус-вектор до центра 
                 double del_x, del_y;
@@ -200,16 +227,40 @@ namespace satellite.Model
                 del_x = loc.X - center.X;
                 del_y = loc.Y - center.Y;
                 r = Math.Sqrt(Math.Pow(del_x, 2) + Math.Pow(del_y, 2)); // нашли гипотенузу
-            }
 
+                ///////
+                r_vector1_1 = radius_vector(tmpPonit, apogee_1);
+                r_vector2_1 = radius_vector(loc, apogee_1);
+                r_vector1_2 = radius_vector(tmpPonit, apogee_2);
+                r_vector2_2 = radius_vector(loc, apogee_2);
+                //++++++++++
+                r_final = Math.Sqrt(Math.Pow(50, 2) - Math.Pow(b, 2));
+                r_loc_tmp_begin = radius_vector(loc_begin, loc);
+                //++++++++++
+                begin_point.X = 0;
+                begin_point.Y = 0;
+                //////////
+                one = r_vector1_1 > r_vector2_1;
+                two = r_vector1_2 > r_vector2_2;
+                r_stat = r <= 50.0;
+                //////////
+                r_vector = radius_vector(loc, begin_point);
+                //////////
+            }
+            
             public void angle_change(Point loc)
             {
+                if(sign > 50)
+                {
+                    this.angle_rotation -= 0.01 * velo_coef;
+                }
+                else
+                {
+                    this.angle_rotation += 0.01 * velo_coef;
+                }
                 this.tmpPonit = loc;
-                this.angle_rotation -= 0.0123;
                 Task.Delay(1);
             }
         }
-
-
     }
 }

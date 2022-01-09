@@ -18,7 +18,7 @@ namespace WindowsFormsApp1
         private Point center; // center 
         private Point center_tmp; // center
         private Point center_new; // center_new
-
+        private int coef;
         double angle;
 
         Controller controller = null;
@@ -45,8 +45,18 @@ namespace WindowsFormsApp1
             center = new Point(pictureBox1.Width / 2, pictureBox1.Height / 2);
             center_new = new Point(pictureBox1.Width / 2 - 50, pictureBox1.Height / 2 - 50);
             pictureBox1.Location = loc1;
+            
             /////////////
-            controller = new Controller(this, ref im, ref g, ref bm, ref center, ref pictureBox1, ref center_new, ref label6);
+            controller = new Controller(
+                this,
+                ref im,
+                ref g,
+                ref bm,
+                ref center,
+                ref pictureBox1,
+                ref center_new,
+                ref label6
+                );
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -57,23 +67,16 @@ namespace WindowsFormsApp1
         private void trackBar1_Scroll(object sender, EventArgs e)
         {
             // задаем коэф. n, который будет домножаться на angle
-            
+            controller.velo_coef(trackBar1.Value);
         }
 
         private void button2_Click(object sender, EventArgs e) 
         {
-
+            
         }
 
         private void Form1_Load(object sender, EventArgs e) // done
-        {
-            /*
-            Timer x = new Timer();
-            x.Interval = 1;
-            x.Start();
-            x.Tick += new EventHandler(timer1_Tick);
-            */
-            //////
+        {   
             controller.timer_init(sender, e);
         }
 

@@ -16,17 +16,14 @@ namespace satellite.Controller
         Form1 form = null;
         Model.Model model = null;
 
-        private Point loc1; //loc picture box1
         private Point center; // center 
-        private Point center_tmp; // center
         private Point center_new; // center_new
+        private int coef; // for evert sat
 
         // Create solid brush.
-        SolidBrush redBrush = new SolidBrush(Color.Red);
+        SolidBrush redBrush = new SolidBrush(Color.BlueViolet);
         Pen pen = new Pen(Color.Black);
 
-        Point tmpPonit = new Point();
-        
         // +++++++++ 
         Bitmap bm;
         Graphics g;
@@ -40,7 +37,16 @@ namespace satellite.Controller
         public Controller()
         { }
       
-        public Controller(Form1 form, ref Image im, ref Graphics g, ref Bitmap bm, ref Point center, ref PictureBox pictureBox1, ref Point center_new, ref Label label6)
+        public Controller(
+            Form1 form, 
+            ref Image im, 
+            ref Graphics g, 
+            ref Bitmap bm, 
+            ref Point center, 
+            ref PictureBox pictureBox1, 
+            ref Point center_new, 
+            ref Label label6
+            )
         {
             MessageBox.Show("Connection controler");
             this.form = form;
@@ -53,81 +59,71 @@ namespace satellite.Controller
             this.pictureBox1 = pictureBox1;
             this.center_new = center_new;
 
+            this.coef = 1;
             // ______
             this.label6 = label6;
+            // ______
         }
 
         public void timer_init(object sender, EventArgs e)
         {
-            //MessageBox.Show("timer");
             Timer x = new Timer();
             x.Interval = 1;
             x.Start();
             x.Tick += new EventHandler(timer1_Tick);
         }
-
-        /*
-        private void draw()
-        {
-            g.Clear(pictureBox1.BackColor);
-
-        }
-        */
-        ////
-        int countTick;
-        ////
         private void timer1_Tick(object sender, EventArgs e)
         {
             g.Clear(pictureBox1.BackColor);
-            foreach (var obj in this.model.stack)
+            foreach (var obj in this.model.list)
             {
                 obj.position(center);
-                //obj.entry_flag = false;
-                //if(obj.tmpPonit.Y >= obj.loc.Y & obj.r <= 50.0)
-                if (obj.r <= 50.0)
+                obj.velo_coef = coef;
+                
+                if(obj.r <= 50 & obj.r_loc_tmp_begin <= obj.r_final)
                 {
-                    //obj.entry_flag = true;
-
                     Draw_Up(obj.loc, obj.a, obj.b, obj.angleStart, obj.angle_deg);
                 }
                 else
                 {
                     Draw_Down(obj.loc, obj.a, obj.b, obj.angleStart, obj.angle_deg);
                 }
-                //////
-                countTick += 1;
-                //////
-                label6.Text = "obj.loc.X = " + obj.loc.X + "obj.loc.Y = " + obj.loc.Y + " TICK " + countTick + "\nTMPPONIT = " + obj.tmpPonit + "\n a = " + obj.a;
                 pictureBox1.Image = bm;
-                //////
                 obj.angle_change(obj.loc);
+
+                //////
+                label6.Text = "apogee1 = " + obj.apogee_1 + " apogee2 = " + obj.apogee_2 + " \n obj.r_vector1_1 = " + obj.r_vector1_1
+                    + " obj.r_vector2_1 = " + obj.r_vector2_1 + " obj.r_vector1_2 = " + obj.r_vector1_2 + " obj.r_vector2_2 = " + obj.r_vector2_2
+                    + "\n one = " + obj.one + " two = " + obj.two + " r_stat = " + obj.r_stat + 
+                    " \n loc_begin = " + obj.loc_begin;
+                //////
             }
         }
 
         public int Add()
         {
-            //добавляем в стек новый объект
-            MessageBox.Show("VOID ADD IN CONTROLLER");
-            model.stack.Push(new Model.Model.Sat(center));
-            return model.stack.Count;
+            //добавляем в список новый объект
+            model.list.Add(new Model.Model.Sat(center));
+            return model.list.Count;
         }
 
         public int Delete()
         {
-            model.stack.Pop();
-            return model.stack.Count;
+            model.list.RemoveAt(model.list.Count - 1);
+            return model.list.Count;
         }
 
+        public void velo_coef(int coef)
+        {
+            this.coef = coef;
+        }
         private void Draw_Up(Point loc, int a, int b, double angleStart, double angle)
         {
-            //label6.Text = "LOC " + loc;
-            Rectangle sat = new Rectangle(loc, new Size(14, 14)); // 
+            Rectangle sat = new Rectangle(loc, new Size(8, 8)); // 
             // Fill ellipse on screen.
-            //g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 20, center.Y + 160, center.X + 20, center.Y - 160)); //Рисует эллипс
             g.FillEllipse(redBrush, sat);
             g.DrawImage(im, center_new);
             g.TranslateTransform(center.X, center.Y); //это центр вращения
-            //label2.Text = "center_tmp: " + center.X / 2 + ", " + -center.Y / 2;
             g.RotateTransform((float)angle); //Поворачиваем
             g.TranslateTransform(-center.X, -center.Y);
             g.DrawArc(pen, (float)center.X - b, (float)center.Y - a, b * 2, a * 2, (float)angleStart, 360 - (float)angleStart * 2);
@@ -136,17 +132,10 @@ namespace satellite.Controller
 
         private void Draw_Down(Point loc, int a, int b, double angleStart, double angle)
         {
-            //label6.Text = "LOC " + loc;
-            //означает, что точка двигается вниз = > точка и ось должна быть выше пикчи Земли
             g.DrawImage(im, center_new);
-            Rectangle sat = new Rectangle(loc, new Size(14, 14));
+            Rectangle sat = new Rectangle(loc, new Size(8, 8));
             // Fill ellipse on screen.
-            //g.DrawEllipse(pen, Rectangle.FromLTRB(center.X - 20, center.Y + 160, center.X + 20, center.Y - 160)); //Рисует эллипс
-            //---------
-            //g.DrawArc(pen, (float)center.X - 20, (float)center.Y - 160, 40, 320, 90, 220);
-            //g.DrawArc(pen, (float)radius_elli_x, (float)radius_elli_y, b * 2, a * 2, (float)angleStart, 360 - (float)angleStart * 2);
             g.TranslateTransform(center.X, center.Y); //это центр вращения
-            //label2.Text = "center_tmp: " + center.X / 2 + ", " + -center.Y / 2;
             g.RotateTransform((float)angle); //Поворачиваем
             g.TranslateTransform(-center.X, -center.Y);
             g.DrawArc(pen, (float)center.X - b, (float)center.Y - a, b * 2, a * 2, (float)angleStart, 360 - (float)angleStart * 2);
