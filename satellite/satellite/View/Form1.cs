@@ -96,7 +96,7 @@ namespace WindowsFormsApp1
             }
             else
             {
-                label5.Text = Count + " Visible Satellites" ;
+                label5.Text = "" + Count;
             }
         }
 
