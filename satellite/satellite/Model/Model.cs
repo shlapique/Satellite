@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using satellite.Controller;
+using System.Drawing.Imaging;
 
 namespace satellite.Model
 {
@@ -68,17 +69,45 @@ namespace satellite.Model
             return r;
         }
 
-
         //classes +++ 
-        public abstract class Earth
+        public class Earth // abstract -> --
         {
-            Image im; 
-            protected const int MAX_ORBIT_COUNT = 8;
-            public string Path 
+            //image proc ***********
+            public void im_make_draw(
+                Image im, //подразумевается передача пути:
+                //im = Image.FromFile("H:\\projects\\mai\\isrpps\\cursed\\img\\earth_no_color_test.png"); // im передает Earth
+                Bitmap bm, // битмап 100 * 100
+                Point point, //точка начала рисования на окружности
+                Graphics g // 
+                )
             {
-                get { return "H:\\projects\\mai\\isrpps\\cursed\\img\\earth.png"; } 
-                set { } 
+                //++
+                bm = new Bitmap(100, 100);
+                //ImageCodecInfo; // png
+                Point center = new Point(50, 50); // центр картинки
+                SolidBrush brush = new SolidBrush(Color.Black);
+                Rectangle dot = new Rectangle(point, new Size(14, 14));
+                double r = radius_vector(center, point);
+
+                //++
+
+                for(int i = 0; i < 100; ++i)
+                {
+                    point.X += i;
+                    dot = new Rectangle(point, new Size(14, 14));
+                    if (r <= 50)
+                    {
+                        g.FillEllipse(brush, dot);
+                    }
+                    else
+                    {
+                        point.X = center.X - (int)Math.Sqrt(Math.Pow(50, 2) - Math.Pow(center.Y - point.Y, 2));
+                    }
+                }
+
+
             }
+            //image proc ***********
         }
 
         public class Orbit : Earth
@@ -146,79 +175,58 @@ namespace satellite.Model
             //public Point loc_tmp;
             public Point tmpPonit;
             int x, y; // начальное положение
-            double coord_x, coord_y, radius_elli_x, radius_elli_y;
+            double coord_x, coord_y;
             public double r; // radius-vector
-
-            public double r_vector1_1; // 
-            public double r_vector2_1; // 
-            public double r_vector1_2; // 
-            public double r_vector2_2; // 
-
             public double r_vector;
-
-            public double r_final;
-            public double r_loc_tmp_begin;
+            // ***********
+            public double r_track;
+            public Point rece;
+            public int sat_stat;
+            // *********** 
 
             // ____________
-            public double velo_coef = 1; // коэфф скорости 
+            public double velo_coef; // коэфф скорости 
+            public int size;
 
             Random rand = new Random();
-
-            public Point begin_point;
-
-            public int flag;
-            public bool one;
-            public bool two;
-            public bool r_stat;
-            public bool entry = false;
-
             public Point loc_begin;
-
-            public double ratio_cos, ratio_sin;
-
             public int sign; // направл вращения 
-            public Sat(Point center)
+            public Sat(Point center, Point rece_point)
             {
                 this.tmpPonit = new Point();
-                apogee_pos(center);
                 start_position(center);
                 loc_begin = new Point();
                 loc_begin = loc;
+                rece = rece_point;
                 sign = rand.Next(0, 100);
                 velo_coef = 1;
+                size = 4;
             }
 
             public void start_position(Point center)
             {
                 this.coord_x = b * Math.Cos(angle_rotation);
                 this.coord_y = a * Math.Sin(angle_rotation);
-                this.radius_elli_x = center.X - b;
-                this.radius_elli_y = center.Y - a;
                 // повернем x, y
                 rotation(ref coord_x, ref coord_y, angle);
 
                 this.x = (int)(center.X + coord_x);
                 this.y = (int)(center.Y + coord_y);
 
-                this.loc = new Point(x - 4, y - 4); // default location
+                this.loc = new Point(x - size, y - size); // default location
             }
 
             public void position(Point center) // position every tick
             {
                 this.coord_x = b * Math.Cos(angle_rotation);
                 this.coord_y = a * Math.Sin(angle_rotation);
-                this.radius_elli_x = center.X - b;
-                this.radius_elli_y = center.Y - a;
                 // повернем x, y
                 rotation(ref coord_x, ref coord_y, angle);
-
                 this.x = (int)(center.X + coord_x);
                 this.y = (int)(center.Y + coord_y);
-
-                this.loc = new Point(x - 4, y - 4);
+                this.loc = new Point(x - size, y - size);
 
                 angleStart = Math.Acos(b / 50.0);
-
                 angleStart = angleStart * 180.0 / Math.PI; //deg
 
                 // считаем радиус-вектор до центра 
@@ -227,25 +235,8 @@ namespace satellite.Model
                 del_x = loc.X - center.X;
                 del_y = loc.Y - center.Y;
                 r = Math.Sqrt(Math.Pow(del_x, 2) + Math.Pow(del_y, 2)); // нашли гипотенузу
-
-                ///////
-                r_vector1_1 = radius_vector(tmpPonit, apogee_1);
-                r_vector2_1 = radius_vector(loc, apogee_1);
-                r_vector1_2 = radius_vector(tmpPonit, apogee_2);
-                r_vector2_2 = radius_vector(loc, apogee_2);
-                //++++++++++
-                r_final = Math.Sqrt(Math.Pow(50, 2) - Math.Pow(b, 2));
-                r_loc_tmp_begin = radius_vector(loc_begin, loc);
-                //++++++++++
-                begin_point.X = 0;
-                begin_point.Y = 0;
                 //////////
-                one = r_vector1_1 > r_vector2_1;
-                two = r_vector1_2 > r_vector2_2;
-                r_stat = r <= 50.0;
-                //////////
-                r_vector = radius_vector(loc, begin_point);
-                //////////
+                r_track = radius_vector(loc, rece);
             }
             
             public void angle_change(Point loc)
@@ -258,6 +249,7 @@ namespace satellite.Model
                 {
                     this.angle_rotation += 0.01 * velo_coef;
                 }
+
                 this.tmpPonit = loc;
                 Task.Delay(1);
             }

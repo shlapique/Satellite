@@ -18,11 +18,19 @@ namespace satellite.Controller
 
         private Point center; // center 
         private Point center_new; // center_new
+        private Point rece_pos; // point of rece -> to Model
         private int coef; // for evert sat
+        private int sat_count; // satellite count
+
+        private int size;
+        private int set_rece_flag; // flag for mouse set position
 
         // Create solid brush.
-        SolidBrush redBrush = new SolidBrush(Color.BlueViolet);
+        SolidBrush Brush = new SolidBrush(Color.BlueViolet);
+        SolidBrush brownBrush = new SolidBrush(Color.Brown);
         Pen pen = new Pen(Color.Black);
+        Pen pen1 = new Pen(Color.Purple);
+        Pen pen2 = new Pen(Color.Red);
 
         // +++++++++ 
         Bitmap bm;
@@ -48,7 +56,7 @@ namespace satellite.Controller
             ref Label label6
             )
         {
-            MessageBox.Show("Connection controler");
+            MessageBox.Show("Выберите точку на поверхности Земли");
             this.form = form;
             this.model = new Model.Model(this);
 
@@ -60,55 +68,84 @@ namespace satellite.Controller
             this.center_new = center_new;
 
             this.coef = 1;
+            this.size = 4;
+            this.set_rece_flag = 0;
+
             // ______
             this.label6 = label6;
+
+            Draw_Earth(this.im, this.center_new);
+            pictureBox1.Image = bm;
+
             // ______
         }
 
         public void timer_init(object sender, EventArgs e)
         {
             Timer x = new Timer();
-            x.Interval = 1;
+            x.Interval = 1; // 1ms
             x.Start();
             x.Tick += new EventHandler(timer1_Tick);
         }
+
         private void timer1_Tick(object sender, EventArgs e)
         {
             g.Clear(pictureBox1.BackColor);
+            Draw_Earth(this.im, this.center_new);
+            Point tmp_rece_point = new Point(rece_pos.X - 3, rece_pos.Y - 3);
+            Rectangle rec = new Rectangle(tmp_rece_point, new Size(6, 6)); // 
+            // Fill ellipse on screen.
+            g.FillEllipse(brownBrush, rec);
+
+            this.sat_count = 0;
             foreach (var obj in this.model.list)
             {
                 obj.position(center);
                 obj.velo_coef = coef;
-                
-                if(obj.r <= 50 & obj.r_loc_tmp_begin <= obj.r_final)
+                int local_flag = 0;
+
+                if (obj.r_track <= obj.b) // рад-вектор до сата из ресивера 
                 {
-                    Draw_Up(obj.loc, obj.a, obj.b, obj.angleStart, obj.angle_deg);
+                    local_flag += 1;
+                    this.sat_count += 1;
+                    Point tmp = new Point(obj.loc.X + size, obj.loc.Y + size);
+                    g.DrawLine(pen2, obj.rece, tmp);
+                }
+
+                if(local_flag == 1)
+                {
+                    this.Brush = new SolidBrush(Color.Red);
                 }
                 else
                 {
-                    Draw_Down(obj.loc, obj.a, obj.b, obj.angleStart, obj.angle_deg);
+                    this.Brush = new SolidBrush(Color.BlueViolet);
                 }
+                Draw_all(obj.loc, obj.a, obj.b, obj.angleStart, obj.angle_deg, this.Brush);
+
                 pictureBox1.Image = bm;
                 obj.angle_change(obj.loc);
-
-                //////
-                label6.Text = "apogee1 = " + obj.apogee_1 + " apogee2 = " + obj.apogee_2 + " \n obj.r_vector1_1 = " + obj.r_vector1_1
-                    + " obj.r_vector2_1 = " + obj.r_vector2_1 + " obj.r_vector1_2 = " + obj.r_vector1_2 + " obj.r_vector2_2 = " + obj.r_vector2_2
-                    + "\n one = " + obj.one + " two = " + obj.two + " r_stat = " + obj.r_stat + 
-                    " \n loc_begin = " + obj.loc_begin;
-                //////
             }
+            label6.Text = "Visible Satellite: " + this.sat_count;
         }
 
         public int Add()
         {
             //добавляем в список новый объект
-            model.list.Add(new Model.Model.Sat(center));
+            if(set_rece_flag == 0) // enum type ++
+            {
+                return -1;
+            }
+            model.list.Add(new Model.Model.Sat(center, rece_pos));  // Satellite ++ 
             return model.list.Count;
         }
 
         public int Delete()
         {
+            // добавить dispose object !
+            if(model.list.Count == 0)
+            {
+                return -1;
+            }
             model.list.RemoveAt(model.list.Count - 1);
             return model.list.Count;
         }
@@ -117,12 +154,40 @@ namespace satellite.Controller
         {
             this.coef = coef;
         }
-        private void Draw_Up(Point loc, int a, int b, double angleStart, double angle)
+
+        public void sat_size(int size)
         {
-            Rectangle sat = new Rectangle(loc, new Size(8, 8)); // 
+            this.size = size;
+        }
+
+        public int rece_point_set(Point point)
+        {
+            int r = (int)Math.Sqrt(Math.Pow(center.X - point.X, 2) + Math.Pow(center.Y - point.Y, 2));
+            if (set_rece_flag == 0) // nothin set
+            {
+                if (r <= 50)
+                {
+                    this.rece_pos = point; // 
+                    this.set_rece_flag = 1;
+                    return 54;
+                }
+                else
+                {
+                    return 1;
+                }
+            }
+            else
+            {
+                return -1;
+            }
+        }
+
+        private void Draw_Up(Point loc, int a, int b, double angleStart, double angle, SolidBrush brush)
+        {
+            Rectangle sat = new Rectangle(loc, new Size(size * 2, size * 2)); // 
             // Fill ellipse on screen.
-            g.FillEllipse(redBrush, sat);
-            g.DrawImage(im, center_new);
+            g.FillEllipse(brush, sat);
+            //g.DrawImage(im, center_new);
             g.TranslateTransform(center.X, center.Y); //это центр вращения
             g.RotateTransform((float)angle); //Поворачиваем
             g.TranslateTransform(-center.X, -center.Y);
@@ -130,17 +195,28 @@ namespace satellite.Controller
             g.ResetTransform(); //Возвращаем точку отчета на 0, чтоб дальше рисовать как обычно
         }
 
-        private void Draw_Down(Point loc, int a, int b, double angleStart, double angle)
+        private void Draw_Down(Point loc, int a, int b, double angleStart, double angle, SolidBrush brush)
         {
-            g.DrawImage(im, center_new);
-            Rectangle sat = new Rectangle(loc, new Size(8, 8));
+            //g.DrawImage(im, center_new);
+            Rectangle sat = new Rectangle(loc, new Size(size * 2, size * 2));
             // Fill ellipse on screen.
             g.TranslateTransform(center.X, center.Y); //это центр вращения
             g.RotateTransform((float)angle); //Поворачиваем
             g.TranslateTransform(-center.X, -center.Y);
             g.DrawArc(pen, (float)center.X - b, (float)center.Y - a, b * 2, a * 2, (float)angleStart, 360 - (float)angleStart * 2);
             g.ResetTransform(); //Возвращаем точку отчета на 0, чтоб дальше рисовать как обычно
-            g.FillEllipse(redBrush, sat);
+            g.FillEllipse(brush, sat);
+        }
+
+        private void Draw_all(Point loc, int a, int b, double angleStart, double angle, SolidBrush brush)
+        {
+            Draw_Up(loc, a, b, angleStart, angle, brush);
+            Draw_Down(loc, a, b, angleStart, angle, brush);
+        }
+
+        private void Draw_Earth(Image im, Point center_new)
+        {
+            g.DrawImage(im, center_new);
         }
     }
 }
