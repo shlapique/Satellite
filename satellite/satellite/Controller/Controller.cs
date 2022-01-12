@@ -18,16 +18,25 @@ namespace satellite.Controller
 
         private Point center; // center 
         private Point center_new; // center_new
+
+        /*=========*/
+        private int set_rece_flag; // flag for mouse set position
         private Point rece_pos; // point of rece -> to Model
+        public bool rece_sign = true; // true - for increasing x (+), false - .;. (-)
+        public double rece_bias;
+        public bool visi_rece_flag = true; // -> controller */ // flag for rece dot visibility
+        /*=========*/
+
         private int coef; // for evert sat
         private int sat_count; // satellite count
 
         private int size;
-        private int set_rece_flag; // flag for mouse set position
+
 
         // Create solid brush.
         SolidBrush Brush = new SolidBrush(Color.BlueViolet);
         SolidBrush brownBrush = new SolidBrush(Color.Brown);
+
         Pen pen = new Pen(Color.Black);
         Pen pen1 = new Pen(Color.Purple);
         Pen pen2 = new Pen(Color.Red);
@@ -37,6 +46,8 @@ namespace satellite.Controller
         Graphics g;
         Image im;
         PictureBox pictureBox1;
+
+        SolidBrush BackColorBrush;
 
         //--for debug 
         Label label6;
@@ -73,9 +84,15 @@ namespace satellite.Controller
 
             // ______
             this.label6 = label6;
-
+            // ______
+            Color brushColor = Color.FromArgb(250 / 100 * 25, 255, 0, 0); // invisible color
+            this.BackColorBrush = new SolidBrush(brushColor); 
+            //-----------
+            //earth obj
+            //earth = new Model.Model.Earth(); // new Earth !
             Draw_Earth(this.im, this.center_new);
             pictureBox1.Image = bm;
+            //
 
             // ______
         }
@@ -92,27 +109,30 @@ namespace satellite.Controller
         {
             g.Clear(pictureBox1.BackColor);
             Draw_Earth(this.im, this.center_new);
+
+            /* changing of rece_pos*/
             Point tmp_rece_point = new Point(rece_pos.X - 3, rece_pos.Y - 3);
-            Rectangle rec = new Rectangle(tmp_rece_point, new Size(6, 6)); // 
+            Rectangle rec = new Rectangle(tmp_rece_point, new Size(6, 6));
             // Fill ellipse on screen.
             g.FillEllipse(brownBrush, rec);
 
             this.sat_count = 0;
             foreach (var obj in this.model.list)
             {
-                obj.position(center);
+                obj.position();
                 obj.velo_coef = coef;
-                int local_flag = 0;
+
+                int visi_flag = 0; // rename!
 
                 if (obj.r_track <= obj.b) // рад-вектор до сата из ресивера 
                 {
-                    local_flag += 1;
+                    visi_flag += 1;
                     this.sat_count += 1;
                     Point tmp = new Point(obj.loc.X + size, obj.loc.Y + size);
-                    g.DrawLine(pen2, obj.rece, tmp);
+                    g.DrawLine(pen2, rece_pos, tmp);
                 }
 
-                if(local_flag == 1)
+                if(visi_flag == 1)
                 {
                     this.Brush = new SolidBrush(Color.Red);
                 }
@@ -125,21 +145,23 @@ namespace satellite.Controller
                 pictureBox1.Image = bm;
                 obj.angle_change(obj.loc);
             }
+
+
             label6.Text = "Visible Satellite: " + this.sat_count;
         }
 
-        public int Add()
+        public int AddSatellite()
         {
             //добавляем в список новый объект
             if(set_rece_flag == 0) // enum type ++
             {
                 return -1;
             }
-            model.list.Add(new Model.Model.Sat(center, rece_pos));  // Satellite ++ 
+            model.list.Add(new Model.Model.Satellite(center, rece_pos));  // Satellite ++ 
             return model.list.Count;
         }
 
-        public int Delete()
+        public int DeleteSatellite()
         {
             // добавить dispose object !
             if(model.list.Count == 0)

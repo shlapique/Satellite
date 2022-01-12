@@ -19,10 +19,6 @@ namespace WindowsFormsApp1
         private Point center_new; // center_new
 
         Controller controller = null;
-
-        // Create solid brush.
-        SolidBrush redBrush = new SolidBrush(Color.Red);
-        Pen pen = new Pen(Color.Black);
         Bitmap bm;
         Graphics g;
         Image im;
@@ -74,7 +70,7 @@ namespace WindowsFormsApp1
 
         private void button3_Click(object sender, EventArgs e)
         {
-            int Count = controller.Add(); // добавление спутника 
+            int Count = controller.AddSatellite(); // добавление спутника 
             if(Count == -1)
             {
                 MessageBox.Show(" Для начала задайте точку приемника \n Тыкните в любое место на Земле");
@@ -88,7 +84,7 @@ namespace WindowsFormsApp1
 
         private void button4_Click(object sender, EventArgs e)
         {
-            int Count = controller.Delete();
+            int Count = controller.DeleteSatellite();
             if (Count == -1)
             {
                 MessageBox.Show("STACK IS EMPTY !");
@@ -121,5 +117,7 @@ namespace WindowsFormsApp1
 
 
         }
+
+
     }
 }

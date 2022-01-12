@@ -16,13 +16,13 @@ namespace satellite.Model
     {
         Random rand = new Random();
 
-        public List<Sat> list;// создадим список сателлитов
+        public List<Satellite> list;// создадим список сателлитов
 
-        Controller.Controller controller { set; get; } = null;
+        public Controller.Controller controller { set; get; } = null;
         public Model(Controller.Controller controller)
         {
             this.controller = controller;
-            this.list = new List<Sat>();
+            this.list = new List<Satellite>();
         }
 
         public static void rad_to_deg(ref double angle_rad)
@@ -69,9 +69,71 @@ namespace satellite.Model
             return r;
         }
 
-        //classes +++ 
-        public class Earth // abstract -> --
+        // ----------------
+        public void rece_position(Point center, ref Point rece_pos,ref double rece_bias, ref bool rece_sign, ref bool visi_rece_flag) // position for rece dot
         {
+            rece_pos.X = (int)(rece_pos.X + rece_bias);
+
+            if (radius_vector(rece_pos, center) < 50.0)
+            {
+
+                /* pseudocode
+                if(visi_rece_flag == false)
+                {
+                    fillrect with backcolor
+                }
+                else
+                {
+                    fillrect with purple
+                }
+                */
+            }
+            else
+            {
+                if ((rece_pos.X - center.X) > 0) // right side relatively center
+                {
+                    rece_sign = false;
+                    visi_rece_flag = false;
+                }
+                else
+                {
+                    rece_sign = true;
+                    visi_rece_flag = true;
+                }
+            }
+        }
+
+        public void rece_bias_change(bool rece_sign, ref double rece_bias)
+        {
+            /* sign settings for rece position */
+            if (rece_sign == true)
+            {
+                if (rece_bias < 0)
+                {
+                    rece_bias = 0;
+                }
+                rece_bias += 1;
+            }
+            else
+            {
+                if(rece_bias > 0)
+                {
+                    rece_bias = 0;
+                }
+                rece_bias -= 1;
+            }
+            Task.Delay(1);
+        }
+        // ----------------
+
+        //classes +++++++++
+        public class Earth //
+        {
+            public Earth()
+            { 
+
+            }
+
             //image proc ***********
             public void im_make_draw(
                 Image im, //подразумевается передача пути:
@@ -121,6 +183,7 @@ namespace satellite.Model
             public int b;
             public int min_b = 0;
             public double angle;
+            public Point center;
 
             public double angle_rotation;
             public double angleStart;
@@ -131,7 +194,7 @@ namespace satellite.Model
             public Point apogee_2; //нижний(правый)
             ///+++++++++
             Random rand = new Random();
-            public Orbit()
+            public Orbit() 
             {
                 random_orbit();
                 this.angle_deg = angle;
@@ -145,7 +208,7 @@ namespace satellite.Model
                 this.angle = rand.Next(angle_min, angle_max); // 
                 this.angle = this.angle * Math.PI / 180.0; // 0 .. pi
             }
-            public void apogee_pos(Point center)
+            public void apogee_pos()
             {
                 if(a > b)
                 {
@@ -168,7 +231,7 @@ namespace satellite.Model
             }
         }
 
-        public class Sat : Orbit
+        public class Satellite : Orbit
         {
             //void movement()   
             public Point loc;
@@ -180,30 +243,36 @@ namespace satellite.Model
             public double r_vector;
             // ***********
             public double r_track;
-            public Point rece;
             public int sat_stat;
+            public bool rece_sign = true; // true - for increasing x (+), false - .;. (-)
+            public double rece_bias;
+            public bool visi_rece_flag = true; // -> controller */
+            public Point rece_pos;
             // *********** 
 
-            // ____________
+            /*-------------*/
             public double velo_coef; // коэфф скорости 
             public int size;
-
+            /*-------------*/
             Random rand = new Random();
             public Point loc_begin;
             public int sign; // направл вращения 
-            public Sat(Point center, Point rece_point)
+
+
+            public Satellite(Point center, Point rece_pos)
             {
                 this.tmpPonit = new Point();
-                start_position(center);
+                start_position();
+                this.center = center;
+                this.rece_pos = rece_pos;
                 loc_begin = new Point();
                 loc_begin = loc;
-                rece = rece_point;
                 sign = rand.Next(0, 100);
                 velo_coef = 1;
                 size = 4;
             }
 
-            public void start_position(Point center)
+            public void start_position()
             {
                 this.coord_x = b * Math.Cos(angle_rotation);
                 this.coord_y = a * Math.Sin(angle_rotation);
@@ -216,7 +285,7 @@ namespace satellite.Model
                 this.loc = new Point(x - size, y - size); // default location
             }
 
-            public void position(Point center) // position every tick
+            public void position() // position every tick
             {
                 this.coord_x = b * Math.Cos(angle_rotation);
                 this.coord_y = a * Math.Sin(angle_rotation);
@@ -236,9 +305,9 @@ namespace satellite.Model
                 del_y = loc.Y - center.Y;
                 r = Math.Sqrt(Math.Pow(del_x, 2) + Math.Pow(del_y, 2)); // нашли гипотенузу
                 //////////
-                r_track = radius_vector(loc, rece);
+                r_track = radius_vector(loc, rece_pos);
             }
-            
+
             public void angle_change(Point loc)
             {
                 if(sign > 50)
@@ -248,6 +317,16 @@ namespace satellite.Model
                 else
                 {
                     this.angle_rotation += 0.01 * velo_coef;
+                }
+
+                /* sign settings for rece position */
+                if (rece_sign == true)
+                {
+                    this.rece_bias += 0.005;
+                }
+                else
+                {
+                    this.rece_bias -= 0.005;
                 }
 
                 this.tmpPonit = loc;
