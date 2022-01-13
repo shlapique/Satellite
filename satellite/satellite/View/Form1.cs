@@ -16,7 +16,7 @@ namespace WindowsFormsApp1
     {
         private Point loc1; //loc picture box1
         private Point center; // center 
-        private Point center_new; // center_new
+        private Point EarthPosition; // EarthPosition
 
         Controller controller = null;
         Bitmap bm;
@@ -36,7 +36,7 @@ namespace WindowsFormsApp1
             this.Size = new Size(800, 450);
             loc1 = new Point((ClientSize.Width / 2) - (pictureBox1.Width / 2), (ClientSize.Height / 2) - (pictureBox1.Height / 2));
             center = new Point(pictureBox1.Width / 2, pictureBox1.Height / 2);
-            center_new = new Point(pictureBox1.Width / 2 - 50, pictureBox1.Height / 2 - 50);
+            EarthPosition = new Point(pictureBox1.Width / 2 - 50, pictureBox1.Height / 2 - 50);
             pictureBox1.Location = loc1;
             
             /////////////
@@ -47,7 +47,7 @@ namespace WindowsFormsApp1
                 ref bm,
                 ref center,
                 ref pictureBox1,
-                ref center_new,
+                ref EarthPosition,
                 ref label6
                 );
         }
@@ -70,54 +70,55 @@ namespace WindowsFormsApp1
 
         private void button3_Click(object sender, EventArgs e)
         {
-            int Count = controller.AddSatellite(); // добавление спутника 
-            if(Count == -1)
+            DialogResult dialogResult;
+            dialogResult = controller.AddSatellite(); // добавление спутника
+
+            switch (dialogResult)
             {
-                MessageBox.Show(" Для начала задайте точку приемника \n Тыкните в любое место на Земле");
-                label5.Text = "" + (Count + 1);
+                case DialogResult.OK:
+                    break;
+                case DialogResult.Retry:
+                    MessageBox.Show(" Для начала задайте точку приемника \n Тыкните в любое место на Земле", "(!)", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    break;
             }
-            else
-            {
-                label5.Text = "" + Count;
-            }
+            label5.Text = "" + controller.sat_count;
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            int Count = controller.DeleteSatellite();
-            if (Count == -1)
+            DialogResult dialogResult;
+            dialogResult = controller.DeleteSatellite();
+
+            switch (dialogResult)
             {
-                MessageBox.Show("STACK IS EMPTY !");
-                label5.Text = "" + (Count + 1);
+                case DialogResult.OK:
+                    break;
+                case DialogResult.No:
+                    MessageBox.Show(" Нет объектов в памяти! ", "(!)", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    break;
             }
-            else
-            {
-                label5.Text = "" + Count;
-            }
+            label5.Text = "" + controller.sat_count;
         }
 
         private void pictureBox1_MouseClick(object sender, MouseEventArgs e)
         {
             var mouseEventArgs = e as MouseEventArgs;
             Point point = mouseEventArgs.Location;
-            int flag = controller.rece_point_set(point);
+            DialogResult dialogResult;
+            dialogResult = controller.rece_point_set(point);
             
-            switch(flag)
+            switch(dialogResult)
             { 
-                case 1:
-                    MessageBox.Show("Точка должна быть 'внутри' Земли ");
+                case DialogResult.Retry:
+                    MessageBox.Show("Точка должна быть 'внутри' Земли ", "(!)", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     break;
-                case 54:
-                    MessageBox.Show("Точка задана успешно !");
+                case DialogResult.OK:
+                    MessageBox.Show("Точка задана успешно !", "DONE", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
-                case -1:
-                    MessageBox.Show("Точка уже была задана до этого ");
+                case DialogResult.Cancel:
+                    MessageBox.Show("Точка уже была задана до этого ", "(!)", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
             }
-
-
         }
-
-
     }
 }

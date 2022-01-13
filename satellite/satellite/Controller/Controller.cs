@@ -17,7 +17,7 @@ namespace satellite.Controller
         Model.Model model = null;
 
         private Point center; // center 
-        private Point center_new; // center_new
+        private Point EarthPosition; // EarthPosition
 
         /*=========*/
         private int set_rece_flag; // flag for mouse set position
@@ -28,17 +28,15 @@ namespace satellite.Controller
         /*=========*/
 
         private int coef; // for evert sat
-        private int sat_count; // satellite count
-
+        private int visi_sat_count; // visible satellite count
         private int size;
-
+        public int sat_count;
 
         // Create solid brush.
         SolidBrush Brush = new SolidBrush(Color.BlueViolet);
         SolidBrush brownBrush = new SolidBrush(Color.Brown);
 
         Pen pen = new Pen(Color.Black);
-        Pen pen1 = new Pen(Color.Purple);
         Pen pen2 = new Pen(Color.Red);
 
         // +++++++++ 
@@ -47,7 +45,9 @@ namespace satellite.Controller
         Image im;
         PictureBox pictureBox1;
 
-        SolidBrush BackColorBrush;
+        /*=========*/
+        SolidBrush BackColorBrush; // for invisibility
+        /*=========*/
 
         //--for debug 
         Label label6;
@@ -55,19 +55,19 @@ namespace satellite.Controller
 
         public Controller()
         { }
-      
+
         public Controller(
-            Form1 form, 
-            ref Image im, 
-            ref Graphics g, 
-            ref Bitmap bm, 
-            ref Point center, 
-            ref PictureBox pictureBox1, 
-            ref Point center_new, 
+            Form1 form,
+            ref Image im,
+            ref Graphics g,
+            ref Bitmap bm,
+            ref Point center,
+            ref PictureBox pictureBox1,
+            ref Point EarthPosition,
             ref Label label6
             )
         {
-            MessageBox.Show("Выберите точку на поверхности Земли");
+            MessageBox.Show("Выберите точку на поверхности Земли", "(!)", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             this.form = form;
             this.model = new Model.Model(this);
 
@@ -76,25 +76,20 @@ namespace satellite.Controller
             this.bm = bm;
             this.center = center;
             this.pictureBox1 = pictureBox1;
-            this.center_new = center_new;
+            this.EarthPosition = EarthPosition;
 
             this.coef = 1;
             this.size = 4;
             this.set_rece_flag = 0;
-
-            // ______
             this.label6 = label6;
-            // ______
-            Color brushColor = Color.FromArgb(250 / 100 * 25, 255, 0, 0); // invisible color
-            this.BackColorBrush = new SolidBrush(brushColor); 
-            //-----------
-            //earth obj
-            //earth = new Model.Model.Earth(); // new Earth !
-            Draw_Earth(this.im, this.center_new);
-            pictureBox1.Image = bm;
-            //
 
-            // ______
+            /*=========*/
+            Color brushColor = Color.FromArgb(250 / 100 * 25, 255, 0, 0); // invisible color
+            this.BackColorBrush = new SolidBrush(brushColor);
+            /*=========*/
+
+            Draw_Earth(this.im, this.EarthPosition);
+            pictureBox1.Image = bm;
         }
 
         public void timer_init(object sender, EventArgs e)
@@ -108,7 +103,7 @@ namespace satellite.Controller
         private void timer1_Tick(object sender, EventArgs e)
         {
             g.Clear(pictureBox1.BackColor);
-            Draw_Earth(this.im, this.center_new);
+            Draw_Earth(this.im, this.EarthPosition);
 
             /* changing of rece_pos*/
             Point tmp_rece_point = new Point(rece_pos.X - 3, rece_pos.Y - 3);
@@ -116,7 +111,7 @@ namespace satellite.Controller
             // Fill ellipse on screen.
             g.FillEllipse(brownBrush, rec);
 
-            this.sat_count = 0;
+            this.visi_sat_count = 0;
             foreach (var obj in this.model.list)
             {
                 obj.position();
@@ -127,7 +122,7 @@ namespace satellite.Controller
                 if (obj.r_track <= obj.b) // рад-вектор до сата из ресивера 
                 {
                     visi_flag += 1;
-                    this.sat_count += 1;
+                    this.visi_sat_count += 1;
                     Point tmp = new Point(obj.loc.X + size, obj.loc.Y + size);
                     g.DrawLine(pen2, rece_pos, tmp);
                 }
@@ -146,30 +141,37 @@ namespace satellite.Controller
                 obj.angle_change(obj.loc);
             }
 
-
-            label6.Text = "Visible Satellite: " + this.sat_count;
+            label6.Text = "Visible Satellite: " + this.visi_sat_count;
         }
 
-        public int AddSatellite()
+        public DialogResult AddSatellite()
         {
             //добавляем в список новый объект
-            if(set_rece_flag == 0) // enum type ++
+            if (set_rece_flag == 0) // enum type ++
             {
-                return -1;
+                return DialogResult.Retry;
             }
-            model.list.Add(new Model.Model.Satellite(center, rece_pos));  // Satellite ++ 
-            return model.list.Count;
+            else
+            {
+                model.list.Add(new Model.Model.Satellite(center, rece_pos));  // Satellite ++
+                this.sat_count = model.list.Count;
+                return DialogResult.OK;
+            }
         }
 
-        public int DeleteSatellite()
+        public DialogResult DeleteSatellite()
         {
             // добавить dispose object !
-            if(model.list.Count == 0)
+            if (model.list.Count == 0)
             {
-                return -1;
+                return DialogResult.No;
             }
-            model.list.RemoveAt(model.list.Count - 1);
-            return model.list.Count;
+            else
+            {
+                model.list.RemoveAt(model.list.Count - 1);
+                this.sat_count = model.list.Count;
+                return DialogResult.OK;
+            }
         }
 
         public void velo_coef(int coef)
@@ -182,7 +184,7 @@ namespace satellite.Controller
             this.size = size;
         }
 
-        public int rece_point_set(Point point)
+        public DialogResult rece_point_set(Point point)// enum type !!!!!!!!!
         {
             int r = (int)Math.Sqrt(Math.Pow(center.X - point.X, 2) + Math.Pow(center.Y - point.Y, 2));
             if (set_rece_flag == 0) // nothin set
@@ -191,16 +193,16 @@ namespace satellite.Controller
                 {
                     this.rece_pos = point; // 
                     this.set_rece_flag = 1;
-                    return 54;
+                    return DialogResult.OK;
                 }
                 else
                 {
-                    return 1;
+                    return DialogResult.Retry;
                 }
             }
             else
             {
-                return -1;
+                return DialogResult.Cancel;
             }
         }
 
@@ -209,7 +211,7 @@ namespace satellite.Controller
             Rectangle sat = new Rectangle(loc, new Size(size * 2, size * 2)); // 
             // Fill ellipse on screen.
             g.FillEllipse(brush, sat);
-            //g.DrawImage(im, center_new);
+            //g.DrawImage(im, EarthPosition);
             g.TranslateTransform(center.X, center.Y); //это центр вращения
             g.RotateTransform((float)angle); //Поворачиваем
             g.TranslateTransform(-center.X, -center.Y);
@@ -219,7 +221,7 @@ namespace satellite.Controller
 
         private void Draw_Down(Point loc, int a, int b, double angleStart, double angle, SolidBrush brush)
         {
-            //g.DrawImage(im, center_new);
+            //g.DrawImage(im, EarthPosition);
             Rectangle sat = new Rectangle(loc, new Size(size * 2, size * 2));
             // Fill ellipse on screen.
             g.TranslateTransform(center.X, center.Y); //это центр вращения
@@ -236,9 +238,9 @@ namespace satellite.Controller
             Draw_Down(loc, a, b, angleStart, angle, brush);
         }
 
-        private void Draw_Earth(Image im, Point center_new)
+        private void Draw_Earth(Image im, Point EarthPosition)
         {
-            g.DrawImage(im, center_new);
+            g.DrawImage(im, EarthPosition);
         }
     }
 }
